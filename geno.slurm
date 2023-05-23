@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --mem=8000
+#SBATCH --mem=12000
 #SBATCH --output=Rout/par-%j-%a.out#
 #SBATCH --error=Rout/par-%j-%a.out
 #SBATCH --mail-type=begin
