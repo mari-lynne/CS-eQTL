@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #SBATCH --nodes=1
 #SBATCH --mem=8000
 #SBATCH --output=Rout/par-%j-%a.out#
