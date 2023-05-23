@@ -1,15 +1,6 @@
 #!/bin/sh
 
-#SBATCH --nodes=1
-#SBATCH --mem=8000
-#SBATCH --output=Rout/par-%j-%a.out   # File to which STDOUT will be written, including job ID (%j)
-#SBATCH --error=Rout/par-%j-%a.out    # File to which STDERR will be written, including job ID (%j)
-#SBATCH --mail-type=begin
-#SBATCH --mail-type=end
-#SBATCH --mail-type=fail
-#SBATCH --mail-user=mjohnso5@fredhutch.org
-
-### run in cseqtl/results as sbatch --test-only -c 1 -t 2-0 --mem 8000 geno_prep.sh
+### run in cseqtl/results as sbatch --test-only geno_prep.sh
 
 # 1) Concatenate chromosomes into bcf file
 # 2) Split into sample (indv) specific bcf files
