@@ -13,7 +13,7 @@ FILENAME=WHI
 
 # 1) Concat --------------------------------------------------------------------
 
-bcftools concat ${OUT_DIR}/freeze10b.whi_only_chr{1..22}.bcf --naive --write.index -Ob -o ${OUT_DIR}/${FILENAME}_concat.bcf
+bcftools concat ${OUT_DIR}/freeze10b.whi_only_chr{1..22}.bcf --naive -Ob -o ${OUT_DIR}/${FILENAME}_concat.bcf
 
 # 2) Split ---------------------------------------------------------------------
 
