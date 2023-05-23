@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-### run in cseqtl/results as sbatch --test-only geno_prep.sh
+### run in cseqtl/results as sbatch --test-only slurm_geno.sh
 
 # 1) Concatenate chromosomes into bcf file
 # 2) Split into sample (indv) specific bcf files
