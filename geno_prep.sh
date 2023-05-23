@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #SBATCH --nodes=1
 #SBATCH --mem=8000
