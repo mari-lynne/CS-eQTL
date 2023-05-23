@@ -11,8 +11,6 @@ OUT_DIR=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype
 OUT_DIR2=${OUT_DIR}/split
 FILENAME=WHI
 
-ml BCFtools/1.14-GCC-11.2.0
-
 # 1) Concat --------------------------------------------------------------------
 
 bcftools concat ${OUT_DIR}/freeze10b.whi_only_chr{1..22}.bcf --naive --write.index -Ob -o ${OUT_DIR}/${FILENAME}_concat.bcf
