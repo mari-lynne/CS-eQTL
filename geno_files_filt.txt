@@ -1,4 +1,3 @@
-geno_file
 NWD302222.bcf
 NWD543548.bcf
 NWD286543.bcf
