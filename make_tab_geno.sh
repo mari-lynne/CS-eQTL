@@ -16,10 +16,14 @@ for file in `cat geno_files_filt.txt`;
 do cp $file $OUTDIR;
 done
 
+echo "File pasting complete"
+
 cd $OUTDIR
 
-for file in `cat geno_files_filt.txt`;
+for file in `cat ${DIR}/geno_files_filt.txt`;
 do bcftools query -f '%CHROM\t%POS[\t%GT]\n' $file | sed 's:|:\t:g' -> ${file}_2;
 done
+
+echo "tab-delim haplotype files sorted"
 
 # new header
