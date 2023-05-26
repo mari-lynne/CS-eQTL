@@ -7,6 +7,8 @@
 # bcftools query -f '%CHROM\t%POS[\t%GT]\n' freeze10b.whi_only_chr21.bcf | head -3
 # chr pos 0|1 >> need to find | in GT field, and replace delim with \t
 
+ml BCFtools/1.14-GCC-11.2.0
+
 DIR=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/split
 OUTDIR=${DIR}/sub
 
