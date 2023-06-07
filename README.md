@@ -1,6 +1,6 @@
 # CS-eQTL
 
-This repositry contains scripts used to process and analyse data for cell-specific (CS), allele-specific (AS) eQTL's across WHI particpants.
+This repositry contains scripts used to process and analyse data for cell-specific (CS), allele-specific (AS) eQTL across in WHI particpants.
 
 ### Aims
 
@@ -13,7 +13,7 @@ Cell-sepecific eQTL analysis is based on the methods described in Little, P., Li
 
 #### Steps
 
-Pipeline is based on workflow described in https://github.com/pllittle/CSeQTLworkflow#eqtl-mapping. Generally .sh scripts are used to execute SLURM parallel processing steps. 
+Pipeline is based on workflow described in https://github.com/pllittle/CSeQTLworkflow#eqtl-mapping. Generally .sh scripts are used to execute SLURM parallel processing steps. To run CSeQTL, phased genotype data are required, and must be formatted to tab-delim format. Phased genome data is then used to estimate allele-specific reads (ASE), in additon to total reads (TREC). Finally, cibersort deconvolution is used to estimate cell fractions, which can be input into CSeQTL function which jointly models cell-specific eQTL's, in conjuction with TREC, ASE, and prinicipal components. 
 
 -   Pre-process phased genome information from TOPMed/WHI whole genome sequence (wgs) samples
      - 2_wgs_data_prep
@@ -38,12 +38,10 @@ At the time of starting this project, not all data were readily availbe across b
 #### File locations
 
 - SCT RNAseq (processed rna-bam files): /fh/scratch/delete90/kooperberg_c/sct_rnaseq/release_files
-- SCT WGS (raw wgs-bams): /fh/scratch/delete90/kooperberg_c/wgs_bam
-  
-  
+- SCT WGS (raw wgs-bams): /fh/scratch/delete90/kooperberg_c/wgs_bam  
+
 - LLS RNAseq (raw rna-bam files): /fh/scratch/delete90/kooperberg_c/lls_rna/bam_files
-- LLS WGS (processed wgs-bam -> phased bcfs): /fh/scratch/delete90/kooperberg_c/topmed_freeze10/phased/whi_only
-  
+- LLS WGS (processed wgs-bam -> phased bcfs): /fh/scratch/delete90/kooperberg_c/topmed_freeze10/phased/whi_only  
   
 - CSeQTL data: /fh/scratch/delete90/kooperberg_c/mjohnso5/CSeQTL
 - CSeQTL test data (local): 〜/Documents/CSeQTL/data
