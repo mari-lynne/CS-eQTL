@@ -1,0 +1,270 @@
+---
+title: "genotype-preprocess"
+output: html_document
+date: "2023-04-18"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Aims
+
+-   Preprocess phased genome information from TOPMed WHI samples
+-   Get allele specific and total specific read counts per gene
+-   Prepare data format for Cibersort cell imputation
+
+#### Cohort
+
+-   \~ 1350 female African American participants aged between 50-78
+    years old, a subset of the Women's Health Initiative (WHI) cohort.
+-   Whole genome sequencing (WGS) and whole blood RNA-seq data is
+    available for all participants
+-   Sampling for RNA-sequencing was conducted at the Long Life Study
+    (LLS) time point
+
+#### Data locations
+
+Phased WGS:
+
+[sftp://mjohnso5\@rhino/fh/scratch/delete90/kooperberg_c/topmed_freeze10/phased/whi_only](sftp://mjohnso5@rhino/fh/scratch/delete90/kooperberg_c/sct_rnaseq/release_files){.uri}
+
+RNA seq data:
+
+BAM files\
+[sftp://mjohnso5\@rhino/fh/scratch/delete90/kooperberg_c/sct_rnaseq/release_files](sftp://mjohnso5@rhino/fh/scratch/delete90/kooperberg_c/sct_rnaseq/release_files){.uri}
+
+Mapped read .gct files:\
+\~/Documents/whi_sca/rna/whi_topmed_to6_rnaseq_gene_reads.gct.gz
+
+## RNA pre-processing
+
+-   Reads are already mapped to genes saved as .gct files
+-   Data needs to be in a sorted .bam format for pipeline
+    (<https://github.com/pllittle/CSeQTLworkflow>)
+-   Pipeline github has steps for alignment/qc of raw BAM files, however
+    this has already been performed
+-   Therefore assign appropriate directories and proceed from
+    allele-specific and total read count mapping stage
+
+**Read Processing/Alignment:**
+
+Our processing pipeline consists of the following elements:
+
+1.  Base calls generated in real-time on the NovaSeq6000 instrument (RTA
+    3.1.5).
+
+2.  Demultiplexed, unaligned BAM files produced by Picard
+    ExtractIlluminaBarcodes and IlluminaBasecallsToSam are converted to
+    FASTQ format using SamTools bam2fq (v1.4).
+
+3.  Sequence read and base quality are checked using the FASTX-toolkit
+    (v0.0.13).
+
+4.  Sequences are aligned to GRCh38 with reference transcriptome GENCODE
+    release 30 using STAR (v2.6.1d).
+
+**File formats:**
+
+-   *accepted_hits.merged.markeddups.recal.bam, .bai [STAR]* \<- use
+    this\
+    This is a BAM file that holds all the read-data and the alignments
+    for reads mapped onto the genome including chromosomes,
+    mitochondria, spike-in targets, and un-assigned contigs. This file
+    holds all the read-data and can be converted back to fastq for
+    realignment if desired.
+-   The .bai file is the index for the genome file that is required for
+    random access by samtools and other programs.
+-   *transcriptome_hits.merged.bam [RSEM]*\
+    RSEM generates a BAM file for the alignments to the transcriptome
+    but the sequence sources are the complete annotated collection of
+    transcripts (not chromosomes). This file holds the sample alignments
+    in BAM format to all known transcripts.
+
+### Set up
+
+```{r settings}
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, warning = FALSE, message = FALSE, results = "hide")
+knitr::opts_knit$set(root.dir = '~/Documents/CSeQTL/data') 
+# set global options > evaluate chunks in current - type in r console
+
+wdir = "~/Documents/CSeQTL/data"
+refdir = "~/Documents/CSeQTL/data/ref"
+outdir = "~/Documents/CSeQTL/data/results"
+
+# install.packages(pkgs = "asSeq_0.99.501.tar.gz", type = "source",repos = NULL)
+
+source("~/scripts/r-packages.R")
+source("~/scripts/functions.R")
+
+```
+
+```{bash variables}
+
+# Save directories as variables in .rvars file for later use in bash
+# source whenever starting new session
+
+cat << "EOF" > .rvars
+wdir="/home/mari/Documents/CSeQTL/data"
+refdir="/home/mari/Documents/CSeQTL/data/ref"
+meta_dir=/home/mari/Documents/CSeQTL/data/meta
+results_dir=/home/mari/Documents/CSeQTL/data/results
+
+#genome_dir="sftp://mjohnso5\@rhino/fh/scratch/delete90/kooperberg_c/topmed_freeze10/phased
+#bam_dir="sftp://mjohnso5\@rhino/fh/scratch/delete90/kooperberg_c/sct_rnaseq/release_files"
+#temp_dir="sftp://mjohnso5@rhino/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl"
+
+EOF
+
+```
+
+## Generate total, and allele-specific read counts
+
+##### Download asSeq source package
+
+```{bash 1-aseq}
+
+ url=https://github.com/Sun-lab/asSeq/raw
+ url=$url/master/asSeq_0.99.501.tar.gz
+ 
+ wget $url
+ 
+```
+
+#### Create exon image file:
+
+This contains information about genes and transcripts that we use later
+when mapping
+
+File format:\
+<https://useast.ensembl.org/info/website/upload/gff.html>
+
+```{bash ftp-gtf}
+
+# Download gtf file 
+
+source .rvars
+
+cd ${wdir}
+
+wget ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/latest_release/gencode.v43.annotation.gtf.gz 
+mv  ${wdir}/_README.txt ${refdir}/_README.TXT
+
+# TODO check wget file moving options
+
+
+```
+
+Filter BAM file for unmapped and failQC samples:
+
+```{r aseq}
+ 
+ptm <- proc.time()
+
+ PE = TRUE 
+ 	# set TRUE for paired-end samples
+ 	# set FALSE for single-end
+ 
+ # Filter bam files
+ flag1 = Rsamtools::scanBamFlag(isUnmappedQuery = FALSE,
+ 	isSecondaryAlignment = FALSE, isDuplicate = FALSE,
+ 	isNotPassingQualityControls = FALSE,
+ 	isSupplementaryAlignment = FALSE, isProperPair = PE)
+ 
+ param1 = Rsamtools::ScanBamParam(flag = flag1, what = "seq", mapqFilter = 255)
+# Flag an integer(2) vector used to filter reads based on their 'flag' entry. This is most easily created with the scanBamFlag() helper function. 
+# mapqFilter = minimum mapping quality to include. BAM records with mapping qualities less than mapqFilter are discarded.
+# param1 is therefore a combination of flag filters and mapqFilter
+ 
+ # Input output files
+ bam_file = "941855.accepted_hits.merged.markeddups.recal.bam"
+ bam_filt_fn = "output.filtered.asSeq.bam"
+ 
+ # test as loop with 772151 file aswell
+ 
+Rsamtools::filterBam(file = bam_file, destination = bam_filt_fn, param = param1)
+
+CPU_usage <-proc.time() - ptm      #compute the difference
+CPU_usage
+
+```
+
+```{r exon image}
+
+ gtf_fn = paste0(refdir, "/gencode.v43.annotation.gtf.gz")
+ exdb = GenomicFeatures::makeTxDbFromGFF(file = gtf_fn, format = "gtf")
+ exons_list_per_gene = GenomicFeatures::exonsBy(exdb, by = "gene")
+ 
+ gtf_rds_fn = "exon_by_genes_gencode_v43.rds"
+ saveRDS(exons_list_per_gene, gtf_rds_fn)
+```
+
+#### Get total read count (TReC):
+
+```{r TRC}
+ 
+ genes = readRDS(gtf_rds_fn)
+ bamfile = Rsamtools::BamFileList(bam_filt_fn, yieldSize = 1000000)
+ 
+ se = GenomicAlignments::summarizeOverlaps(features = genes,
+ 	reads = bamfile, mode = "Union",singleEnd = !PE,
+ 	ignore.strand = TRUE, fragments = PE)
+ 
+ ct = as.data.frame(SummarizedExperiment::assay(se)) # reads
+ 
+```
+
+```{bash TRC-2}
+
+# Annoying samtools syntax: output file input file name
+
+samtools sort -n -o output.filtered.asSeq.sortQ.bam output.filtered.asSeq.bam
+
+```
+
+#### Get Allele-specific reads ASR
+
+Get tab delim file of heterozygous snps per sample
+
+File format:\
+- No header\
+- Columns: chr, position, hap1 allele, hap2 allele
+
+```{r ASR}
+
+ het_snp_fn = "<tab delimited filename of heterozygous SNPs for sample>"
+ 
+ bam_filt_sortQ_fn = "output.filtered.asSeq.sortQ"
+ asSeq::extractAsReads(input = sprintf("%s.bam", bam_filt_sortQ_fn),
+ 	snpList = het_snp_fn,min.avgQ = 20,min.snpQ = 20)
+ 
+ 
+ # Count allele specific read counts ASRC
+ 
+  se1 = GenomicAlignments::summarizeOverlaps(features = genes,
+ 	reads = sprintf("%s_hap1.bam",bam_filt_sortQ_fn),mode = "Union",
+ 	singleEnd = !PE,ignore.strand = TRUE,fragments = PE)
+ se2 = GenomicAlignments::summarizeOverlaps(features = genes,
+ 	reads = sprintf("%s_hap2.bam",bam_filt_sortQ_fn),mode = "Union",
+ 	singleEnd = !PE,ignore.strand = TRUE,fragments = PE)
+ seN = GenomicAlignments::summarizeOverlaps(features = genes,
+ 	reads = sprintf("%s_hapN.bam",bam_filt_sortQ_fn),mode = "Union",
+ 	singleEnd = !PE,ignore.strand = TRUE,fragments = PE)
+ 
+  ct1 = as.data.frame(SummarizedExperiment::assay(se1))
+ ct2 = as.data.frame(SummarizedExperiment::assay(se2))
+ ctN = as.data.frame(SummarizedExperiment::assay(seN))
+ cts = cbind(ct,ct1,ct2,ctN) # trec, hap1, hap2, hapN
+ dim(cts); cts[1:2,]
+ out_fn = "/output.trecase.txt"
+ write.table(cts, file = paste0(resultdir, out_fn), quote = FALSE,
+ 	sep = "\t", eol = "\n")
+
+```
+## CibersortX
+
+See cibersort.R script
