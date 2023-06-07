@@ -1,6 +1,6 @@
 # CS-eQTL
 
-This repositry contains scripts used to processes and analyse data for cell-specific (CS), allele-specific (AS) eQTL's across WHI particpants.
+This repositry contains scripts used to process and analyse data for cell-specific (CS), allele-specific (AS) eQTL's across WHI particpants.
 
 ### Aims
 
