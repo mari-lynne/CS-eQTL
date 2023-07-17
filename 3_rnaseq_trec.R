@@ -85,5 +85,7 @@ ct = as.data.frame(SummarizedExperiment::assay(se)) # reads
 sort_bam = paste0(rna_dir, bam_id, "-output.filtered.asSeq.sortQ")
 sortBam(file = bam_filt_fn, destination = sort_bam, byQname=TRUE)
 
+# Add TREC table
+
 print("Total Read Count DONE")
 
