@@ -100,3 +100,10 @@ write.csv(dge$samples, file = "~/Documents/whi_sca/rna/meta/sct_cseqtl_test_cova
 pc_geno <- read.csv(file = "sct_wgs_PCs1-12.csv")
 pc_geno <- pc_geno %>% rename(topmed_nwdid = sample.id)
 test <- left_join(covar, pc_geno, by = "topmed_nwdid")
+
+
+# latent batch effects ---------------------------------------------------------
+
+
+
+
