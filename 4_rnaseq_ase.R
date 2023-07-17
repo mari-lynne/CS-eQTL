@@ -117,3 +117,151 @@ write.table(cts, file = paste0(ase_dir, out_fn), quote = FALSE,
 print("ASE mapping DONE!")
 date()
 
+
+# Plot summary histograms ------------------------------------------------------
+
+# load test data (2 indiviuals for now)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+cts <- fread("~/Documents/CSeQTL/data/ciber_ase/NWD543548-output.trecase.txt")
+cts2 <- fread("~/Documents/CSeQTL/data/ciber_ase/NWD543548-output.trecase.txt")
+
+# List all the files in your directory with the pattern "-output.trecase.txt"
+setwd("~/Documents/CSeQTL/data/ciber_ase/ase")
+
+# Create an empty data frame to store the results
+summary_data <- data.frame()
+
+# Get a list of files in the directory with the specified pattern
+file_list <- list.files(pattern = "-output.trecase.txt")
+for (file in file_list) {
+  # Extract the sample ID from the file name
+  sample_id <- str_extract(file, "(?<=^)[^\\.]+")
+  
+  # Read the file into a data frame
+  data <- fread(file, header = TRUE, col.names = c("V1", paste0(sample_id, c("-output.filtered.asSeq.bam",
+                                                                             "-output.filtered.asSeq.sortQ_hap1.bam",
+                                                                             "-output.filtered.asSeq.sortQ_hap2.bam",
+                                                                             "-output.filtered.asSeq.sortQ_hapN.bam"))))
+  # Rename the columns
+  colnames(data) <- c("gene_id", "trec", "hap1", "hap2", "hapN")
+  
+  # Calculate column sums
+  colsums <- colSums(data[, c("trec", "hap1", "hap2", "hapN")], na.rm = TRUE)
+  
+  # Create a summary row with the sample ID and colsum values
+  summary_row <- data.frame(sample_ID = sample_id,
+                            trec_colsum = colsums["trec"],
+                            hap1_colsum = colsums["hap1"],
+                            hap2_colsum = colsums["hap2"],
+                            hapN_colsum = colsums["hapN"])
+  
+  # Append the summary row to the summary_data data frame
+  summary_data <- bind_rows(summary_data, summary_row)
+}
+
+
+# Step 1: Calculate mean and standard deviation
+# Step 1: Calculate mean and standard deviation
+col_means <- colMeans(summary_data[, -1])  # Exclude the first column (sample_ID)
+col_sds <- apply(summary_data[, -1], 2, sd)  # Standard deviation of each column
+
+# Step 2: Generate random values within 1 SD of the mean for each column
+dummy_samples <- data.frame(sample_ID = paste0("Dummy", 1:10))  # Create a data frame for dummy samples
+
+for (col_name in colnames(summary_data)[-1]) {
+  mean_val <- col_means[col_name]
+  sd_val <- col_sds[col_name]
+  
+  lower_limit <- mean_val - sd_val
+  upper_limit <- mean_val + sd_val
+  
+  dummy_values <- rnorm(n = 10, mean = mean_val, sd = sd_val)
+  dummy_values[dummy_values < lower_limit] <- lower_limit
+  dummy_values[dummy_values > upper_limit] <- upper_limit
+  
+  dummy_samples[[col_name]] <- dummy_values
+}
+
+# Step 3: Combine summary_data and dummy_samples
+combined_data <- rbind(summary_data, dummy_samples)
+
+# Print the combined data
+print(combined_data)
+
+
+# Print the combined data
+print(combined_data)
+
+og <- summary_data
+summary_data <- read.csv(file = "~/Documents/CSeQTL/data/ciber_ase/ase/hap_plots2.csv")
+library(scales)
+
+hap1 <-   ggplot(summary_data, aes(x = trec_colsum, y = hap1_colsum)) +
+  geom_point() +
+  labs(x = "trec", y = "hap1") +
+  ggtitle("Scatter Plot: hap1 vs trec") +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) + 
+  theme_minimal()
+
+hap2 <- 
+  ggplot(summary_data, aes(x = trec_colsum, y = hap2_colsum)) +
+  geom_point() +
+  labs(x = "trec", y = "hap2") +
+  ggtitle("Scatter Plot: hap2 vs trec") +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) + 
+  theme_minimal()
+
+hapN <- 
+  ggplot(summary_data, aes(x = trec_colsum, y = hapN_colsum)) +
+  geom_point() +
+  labs(x = "trec", y = "hapN") +
+  ggtitle("Scatter Plot: hapN vs trec") +
+  scale_x_continuous(labels = comma) +
+  scale_y_continuous(labels = comma) + 
+  theme_minimal()
+
+library(patchwork)
+
+(hap1 | hap2 |hapN) + plot_annotation(tag_levels = "a")
+
+write.csv(summary_data, file = "hap_plots.csv", row.names = F)
+
+read.csv(file = "hap_plots.csv")
+
+
+# Test -----
+
+data <- fread("~/Documents/CSeQTL/data/ciber_ase/NWD543548-output.trecase.txt")
+
+data <- data.frame(gene_id = c(1, 2, 3),
+                   sample_ID_trec = c(10, 20, 30),
+                   sample_ID_hap1 = c(5, 15, 25),
+                   sample_ID_hap2 = c(7, 17, 27),
+                   sample_ID_hapN = c(8, 18, 28))
+
+# Rename the columns
+colnames(data) <- c("gene_id", "trec", "hap1", "hap2", "hapN")
+
+# Calculate column sums
+colsums <- colSums(data[, c("trec", "hap1", "hap2", "hapN")], na.rm = TRUE)
+
+# Create a summary data frame
+summary_data <- data.frame(sample_ID = "sample_ID",
+                           trec_colsum = colsums["trec"],
+                           hap1_colsum = colsums["hap1"],
+                           hap2_colsum = colsums["hap2"],
+                           hapN_colsum = colsums["hapN"]
+
+
+
+ggplot(combined_data, aes(x = trec, y = sample_ID-hap1)) +
+  geom_point() +
+  labs(title = "Haplotype 1",
+       x = "Total RNA-seq fragments",
+       y = "Haplotype 1 fragments")
