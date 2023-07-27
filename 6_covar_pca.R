@@ -65,9 +65,6 @@ pc_top <- data.frame(fread(file = "~/Documents/whi_sca/rna/results/pc_top.txt"))
 pc_top <- pc_top %>% dplyr::rename(rnaseq_ids = V1)
 covar <- left_join(geno_samples, pc_top, by = "rnaseq_ids")
 
-write.csv(covar, file = "~/Documents/whi_sca/rna/meta/sct_cseqtl_test_covars.csv", row.names = F)
-
-
 # Library size -----------------------------------------------------------------
 
 # One of the non-intercept columns should correspond to centered log-transformed library size.
@@ -95,6 +92,8 @@ dge <- calcNormFactors(dge)
 dge$samples$lib.size
 
 write.csv(dge$samples, file = "~/Documents/whi_sca/rna/meta/sct_cseqtl_test_covars.csv", row.names = T)
+
+
 
 # GWAS PCs ---------------------------------------------------------------------
 pc_geno <- read.csv(file = "sct_wgs_PCs1-12.csv")

@@ -1,6 +1,9 @@
 #!/bin/bash
 
 # cd to trecase dir, save output to ciber dir
+trecase_dir=~/Documents/CSeQTL/data/ciber_ase
+
+cd ${trecase_dir}
 
 # 1) get total counts from all files - save as a temporary version
 for f in *trecase.txt; do

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --array=[1-2]
+#SBATCH --array=[1-21]
 #SBATCH --nodes=1
 #SBATCH --mem-per-cpu=32000
 #SBATCH --cpus-per-task=1
@@ -15,5 +15,5 @@ ml fhR/4.2.2.1-foss-2021b
 
 Rscript 4_rnaseq_ase.R $SLURM_JOB_NAME
 
-# Run in fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl as sbatch -J manifest_rna_geno.csv 4_test_ase.sh
+# Run in fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl as sbatch -J manifest_rna_geno.csv 4_rnaseq_ase.sh
 
