@@ -1,13 +1,13 @@
 #!/bin/bash
 
-tree_dir=/home/mari/Documents/CSeQTL/data/ciber_ase/ase
+tree_dir=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/test_july/all_files/ASE
 cd ${tree_dir}
 
 # Get a list of all the *output.trecase.txt files in the current directory
 files=( *output.trecase.txt )
 
 # Create the header line for the output files
-header="sample_id\ttotal\thap1\thap2\thapN\tASREC"
+header="sample_id\ttotal\thap1\thap2\tASREC"
 
 # Loop through each file
 for file in "${files[@]}"; do
@@ -45,3 +45,5 @@ for file in "${files[@]}"; do
     echo -e "$sample_id\t$trec\t$hap1\t$hap2\t$ASREC" >> "$output_file"
   done
 done
+
+# TODO add output dir or mv files
