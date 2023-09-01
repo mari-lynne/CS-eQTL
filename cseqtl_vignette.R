@@ -1,6 +1,16 @@
 library(CSeQTL)
 library(data.table)
 library(dplyr)
+library(smarter)
+library(ggplot2)
+
+# An Introduction
+vignette(topic = "intro",package = "CSeQTL")
+
+# Directories and input
+
+gen_dir <- c("/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/test_aug/ASE/genes")
+test_gene <- c("ENSG00000000457.14_counts.txt")
 
 # Per gene, and per SNP all samples data: --------------------------------------
 TREC 	# TReC vector (Per gene!)
@@ -10,13 +20,14 @@ ASREC 	# total haplotype counts = hap1 + hap2
 PHASE 	# Indicator vector of whether or not to use haplotype counts
 
 # make in aggregate_genes.sh
-gene_dat <- fread("~/Documents/CSeQTL/data/ciber_ase/ase/ENSG00000000938.13_counts.txt")
+gene_dat <- fread(file.path(gen_dir, test_gene))
 TREC <- gene_dat$total
 SNP <- rep(1, nrow(gene_dat)) # Replace with SNP of interest phase info
 ASREC <- gene_dat$ASREC
 PHASE <- rep(1, nrow(gene_dat))
 
 # Get haplotype info for 
+# Simulate a data object for a gene and SNP
 SNP <- sim$true_SNP
 
 # Sample-specific variables -------------------------------------------------
@@ -69,10 +80,6 @@ gs_out = CSeQTL_GS(XX = XX,TREC = TREC, SNP = SNP, hap2 = hap2,
                    ASREC = ASREC, PHASE = PHASE, RHO = RHO, trim = trim,
                    thres_TRIM = 20, numAS = 5, numASn = 5, numAS_het = 5,
                    cistrans = 0.01, ncores = ncores, show = TRUE)
-
-
-
-
 
 
 
@@ -133,6 +140,7 @@ data <- sim$dat
 
 # TReC, ASReC, haplotype 2 counts
 sim$dat[1:5,]
+
 #>   total     LGX1 total_phased hap2      LBC phased   log_mu        mu  pp
 #> 1   456 2339.837           27   13 16.81415      1 6.209945  497.6740 0.5
 #> 2  1080 6467.905           47   17 28.63941      1 6.973643 1068.1067 0.5
