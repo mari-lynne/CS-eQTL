@@ -156,11 +156,13 @@ sim$XX[1:5,]
 #> [1,]  1 -1.7890676  1 -0.5523594 1.35690857
 #> [2,]  1 -0.6066932  0  1.5950620 1.06844120
 #> [3,]  1 -0.9814495  0 -0.9546107 0.06637533
-
+sim$true_SNP # Intitally in 0 1 2 3 code
+# Make new SNP col for plotting - recoded as AA AB BA BB
 sim$dat$SNP = sim$true_SNP
 sim$dat$SNP = factor(sim$dat$SNP,
                      levels = sort(unique(sim$dat$SNP)),
                      labels = c("AA","AB","BA","BB"))
+sim$dat$SNP
 
 # TReC vs SNP
 ggplot(data = sim$dat,
@@ -191,9 +193,9 @@ for(trec_only in c(TRUE,FALSE)){
       upETA = upKAPPA
       upALPHA = upETA
       
-      sout = CSeQTL_smart(TREC = sim$dat$total,hap2 = sim$dat$hap2,
-                          ASREC = sim$dat$total_phased,PHASE = PHASE,
-                          SNP = sim$true_SNP,RHO = sim$true_RHO,XX = sim$XX,upPHI = upPHI,
+      sout = CSeQTL_smart(TREC = sim$dat$total, hap2 = sim$dat$hap2,
+                          ASREC = sim$dat$total_phased, PHASE = PHASE,
+                          SNP = sim$true_SNP, RHO = sim$true_RHO,XX = sim$XX,upPHI = upPHI,
                           upKAPPA = upKAPPA,upETA = upETA,upPSI = upPSI,upALPHA = upALPHA,
                           iFullModel = FALSE,trim = FALSE,thres_TRIM = 10,
                           hypotest = TRUE,swap = FALSE,numAS = 5,numASn = 5,
@@ -216,3 +218,9 @@ sout = CSeQTL_smart(TREC = sim$dat$total,hap2 = sim$dat$hap2,
                     iFullModel = FALSE,trim = FALSE,thres_TRIM = 10,
                     hypotest = TRUE,swap = FALSE,numAS = 5,numASn = 5,
                     numAS_het = 5,cistrans_thres = cistrans_thres)
+
+### Check input variables: ---------------------------------------
+
+head(sim$dat)
+sim$dat$SNP
+sim$true_SNP
