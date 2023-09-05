@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --mem=16
-#SBATCH --output=Rout/%j-%a.out   # File to which STDOUT will be written, including job ID (%j)
-#SBATCH --error=Rerr/%j-%a.err    # File to which STDERR will be written, including job ID (%j)
+#SBATCH --mem=16G
+#SBATCH --output=Rout/%j-%a.out   
+#SBATCH --error=Rerr/%j-%a.err
 
 # 16 G x 23 CHR X 50 samples = 18400 G memory = 920 CPU
 
@@ -21,11 +21,24 @@
 # $1        $2
 # Sample_ID SNP
 
+# Function to check if the previous command was successful
+check_command_success() {
+    if [ $? -ne 0 ]; then
+        echo "Command failed."
+        exit 1
+    fi
+}
+
 # Load BCFtools module
 ml BCFtools/1.14-GCC-11.2.0
+check_command_success
 
-# Read chromosome from the environment variable
-chr=$chr
+# Retrieve chromosome from environment variable
+chr=${chr:-"NotSet"}
+if [ "$chr" == "NotSet" ]; then
+    echo "Chromosome not set. Exiting."
+    exit 1
+fi
 
 # Input directories and files
 GENO_FILE=freeze10b.whi_only_chr
@@ -34,22 +47,27 @@ IN_DIR=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/LLS
 OUT_DIR=${IN_DIR}/LLS_Hap
 
 # Directory check:
-  mkdir -p $OUT_DIR
+mkdir -p $OUT_DIR
 
-ASSIGN=$(awk -F"," -v N=$SLURM_ARRAY_TASK_ID '
+# Extract sample assignments from array
+SAMPLE_ASSIGNMENT=$(awk -F"," -v N=$SLURM_ARRAY_TASK_ID '
   NR==1 {for(i=1;i<=NF;i++) vars[i]=$i; next}
   $1 == N {for(i=1;i<=NF;i++) printf("%s=%s; ", vars[i], $i)}
-' sample_array.csv)
+' lls_sample_array_input.csv)
+check_command_success
 
 # Make those assignments
-eval $ASSIGN
+eval $SAMPLE_ASSIGN
 SAMPLE_NAME=${topmed_nwdid}
 
+# Temp file
+TEMP_SNP_DATA="${chr}_temp_snp_data.txt"
+
+
 # Execute bcftools to extract sample-specific genotype data and pipe it into awk
-bcftools view -s ${SAMPLE_NAME} -m2 -M2 -v ${IN_DIR}/${GENO_FILE}${chr}.bcf \
-  | bcftools query -f '%CHROM\t%POS\t%REF\t%ALT[\t%TGT\n]\n' \
-  | awk -v outdir=${OUT_DIR} -v sample=${SAMPLE_NAME} -v chr=${chr} 'BEGIN {OFS="\t"} 
-        # If it's the first row (Header), modify and print it
+bcftools view -s ${SAMPLE_NAME} -m2 -M2 -v ${IN_DIR}/${GENO_FILE}${chr}.bcf |
+    bcftools query -f '%CHROM\t%POS\t%REF\t%ALT[\t%TGT\n]\n' |
+    awk -v outdir=${OUT_DIR} -v sample=${SAMPLE_NAME} -v chr=${chr} -v temp_snp_data=${TEMP_SNP_DATA} 'BEGIN {OFS="\t"} \
         NR==1 {
           $NF="HAP1\tHAP2";
           # Print modified header row to the new hap file
@@ -89,5 +107,4 @@ bcftools view -s ${SAMPLE_NAME} -m2 -M2 -v ${IN_DIR}/${GENO_FILE}${chr}.bcf \
           # Print the recoded data for the CSeQTL model
           print sample, $1 "_" $2, $5 >> (${chr} "_temp_snp_data.txt");
         }'
-
-
+check_command_success
