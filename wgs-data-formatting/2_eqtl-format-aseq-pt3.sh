@@ -13,14 +13,13 @@ SAMPLE_ASSIGNMENT=$(awk -F"," -v N=$SLURM_ARRAY_TASK_ID '
   NR==1 {for(i=1;i<=NF;i++) vars[i]=$i; next}
   $1 == N {for(i=1;i<=NF;i++) printf("%s=%s; ", vars[i], $i)}
 ' lls_sample_array_input.csv)
-check_command_success
 
 # Make those assignments
-eval $SAMPLE_ASSIGN
+eval ${SAMPLE_ASSIGN}
 SAMPLE_NAME=${topmed_nwdid}
 
 # Check if SAMPLE_NAME is set
-if [ -z "$SAMPLE_NAME" ]; then
+if [ -z ${SAMPLE_NAME} ]; then
     echo "SAMPLE_NAME is not set. Exiting."
     exit 1
 fi
@@ -33,12 +32,13 @@ OUT_DIR=${IN_DIR}/concat
 mkdir -p $OUT_DIR
 
 # Check if any hap files exist for this individual
-hap_files=$(ls ${IN_DIR}/${SAMPLE_NAME}_hap*.txt 2> /dev/null)
-if [ -z "$hap_files" ]; then
+HAP_FILES=$(ls ${IN_DIR}/${SAMPLE_NAME}_hap*.txt 2> /dev/null)
+if [ -z ${HAP_FILES} ]; then
     echo "No haplotype files found for individual ${SAMPLE_NAME}. Exiting."
     exit 1
 fi
 
 # Concatenate all hap files for this individual
-cat ${hap_files} > ${OUT_DIR}/${SAMPLE_NAME}_all_hap.txt
+cat ${HAP_FILES} > ${OUT_DIR}/${SAMPLE_NAME}_all_hap.txt
+
 
