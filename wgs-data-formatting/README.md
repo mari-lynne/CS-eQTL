@@ -61,12 +61,29 @@ This script takes bcf files that have been split by chromosome and creates two i
 #### Usage
 This script is called by `2_eqtl_format_submit.sh`.
 
+#### Example output: 
+(no header in files, dummy data shown)  
+
+ASeq: (per sample)  
+CHR    POS     HAP1  HAP2  
+chr21  5131973  C    C  
+chr21  5131987  G    G  
+chr21  5131989  A    A  
+
+
+CSeQTL: (all samples per chromosome)    
+SAMPLE_ID CHR    POS    GENO  
+NWD446825 chr21 5131973 0  
+NWD446825 chr21 5131987 0  
+NWD446777 chr21 5131973 1  
+NWD446777 chr21 5131987 3  
+
 ---
 
 ### 2_eqtl-format-cseqtl-pt2.sh
 
 #### Description
-This script creates per-SNP files for CSeQTL analysis.It aggregates genotype data stored in chr_temp_snp_data.txt by SNP site.
+This script creates per-SNP files for CSeQTL analysis. It aggregates genotype data stored in chr_temp_snp_data.txt by SNP site.
 
 #### Variables
 - `chr`: Chromosome number.
@@ -74,6 +91,13 @@ This script creates per-SNP files for CSeQTL analysis.It aggregates genotype dat
 
 #### Usage
 This script is called by `2_eqtl_format_submit.sh` and is dependent on the successful completion of `2_eqtl-format-pt1.sh`.
+
+#### Output
+
+CSeQTL: (per SNP file e.g chr21_5031973.txt)
+SAMPLE_ID GENO
+NWD446825 0
+NWD446777 2
 
 ---
 
@@ -89,6 +113,9 @@ This script concatenates haplotype files which have been split per chromosome/in
 
 #### Usage
 This script is called by `2_eqtl_format_submit.sh` and is dependent on the successful completion of `2_eqtl-format-pt1.sh`.
+
+#### Output
+Same as aseq output before except will be concatenated by chromsome
 
 ---
 
