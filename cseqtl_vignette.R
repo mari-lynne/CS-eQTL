@@ -81,6 +81,11 @@ gs_out = CSeQTL_GS(XX = XX,TREC = TREC, SNP = SNP, hap2 = hap2,
                    thres_TRIM = 20, numAS = 5, numASn = 5, numAS_het = 5,
                    cistrans = 0.01, ncores = ncores, show = TRUE)
 
+?CSeQTL_GS
+?CSeQTL_smart
+?CSeQTL_full_analysis
+?CSeQTL_linearTest # no matrix of SNPs, one SNP one gene
+
 
 
 # Vignette ---------------------------------------------------------------------
@@ -224,3 +229,6 @@ sout = CSeQTL_smart(TREC = sim$dat$total,hap2 = sim$dat$hap2,
 head(sim$dat)
 sim$dat$SNP
 sim$true_SNP
+
+ols_out = CSeQTL_linearTest(input = sim$dat,XX = sim$XX,
+                            RHO = sim$true_RHO,SNP = sim$true_SNP,MARG = TRUE)

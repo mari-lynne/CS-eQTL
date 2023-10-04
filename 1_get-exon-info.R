@@ -18,5 +18,14 @@ gtf_rds_fn =  ("exon_by_genes_gencode_v43.rds")
 
 # Prep gene info ---------------------------------------------------------------
 
+# exons by genes
 prep_gene_info(gene_info_dir, gtf_fn) # Saves rds object exon_by_genes.rds and gene_info.tsv.gz
+
+# SNP gene info ----------------------------------------------------------------
+# Input
+gene_fn = file.path(gene_info_dir,"gene_info.tsv.gz")
+# Output
+gtf_rds_fn =  ("exon_by_genes_gencode_v43.rds")
+pr
+
 
