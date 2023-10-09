@@ -45,12 +45,19 @@ all_match <- as.data.frame(inner_join(rna_join, geno_join, by = "subject_id"))
 all_match <- all_match[ , !str_detect(colnames(all_match), ".y")]
 colnames(all_match) <- str_remove(colnames(all_match), ".x")
 
-# Make csv array:
+# Make csv array for WGS data:
 array <- all_match %>% select(topmed_nwdid)
 array$index <- seq(1:nrow(array))
 array <- array %>% select(index, topmed_nwdid)
+
+# Make array for bam file data:
+array <- all_match %>% select(topmed_nwdid, lls_torid)
+array$index <- seq(1:nrow(array))
+array <- array %>% select(index, topmed_nwdid, lls_torid) # reorder cols
+
 write.table(all_match$topmed_nwdid, file = "lls_geno_filt.txt", row.names = F, col.names = F, quote = F)
 write.csv(array, file = "lls_sample_array.csv", quote = FALSE, row.names = FALSE)
+write.csv(array, file = "lls_rna_array.csv", quote = FALSE, row.names = FALSE)
 
 # Phenotype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
