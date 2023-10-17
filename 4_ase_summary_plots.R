@@ -80,4 +80,15 @@ hapN <-
 
 (hap1 | hap2 |hapN) + plot_annotation(tag_levels = "a")
 
+# HAP1 v HAP2 
+summary_data %>% filter(hap1_colsum >= 100000) %>%
+  ggplot(aes(x = hap1_colsum, y = hap2_colsum, colour=hap1_colsum)) +
+  geom_point(alpha = 0.9) +
+  labs(x = "hap1", y = "hap2") +
+  ggtitle("hap1 vs hap2") +
+  scale_x_log10(labels = comma) +
+  scale_y_log10(labels = comma) + 
+  theme_minimal() + theme(legend.position = "none") 
+  
+
 
