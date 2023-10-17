@@ -81,7 +81,11 @@ hapN <-
 (hap1 | hap2 |hapN) + plot_annotation(tag_levels = "a")
 
 # HAP1 v HAP2 
-summary_data %>% filter(hap1_colsum >= 100000) %>%
+# Use the sample() function to randomly select rows
+samp_data <- summary_data[sample(nrow(summary_data), 
+                                             size = nrow(summary_data) * 0.4), ]
+
+samp_data %>%
   ggplot(aes(x = hap1_colsum, y = hap2_colsum, colour=hap1_colsum)) +
   geom_point(alpha = 0.9) +
   labs(x = "hap1", y = "hap2") +
