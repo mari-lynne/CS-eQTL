@@ -10,9 +10,10 @@ library(dplyr)
 library(stringr)
 library(viridis)
 
-plot_dir <- "~/Documents/CSeQTL/data/plots"
+
 # work_dir = "fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/rnaseq/ciber/"
 work_dir <-  "~/Documents/CSeQTL/data/ciber_ase"
+plot_dir <- "~/Documents/CSeQTL/data/plots"
 setwd(work_dir)
 
 # Input files
@@ -22,17 +23,23 @@ sig_tpm <- fread("LM22.txt")
 sig_fn = file.path(work_dir, "signature.txt") # TPM signature expression matrix
 mix_fn = file.path(work_dir, "mixture.txt") # TPM bulk expression matrix
 
-# 1) Import bulk expression data -------------------------------------------------
+# 1) Gather bulk expression data -------------------------------------------------
 
-# run script to make signature matrix in same wd
-system("bash ~/Documents/CSeQTL/scripts/CSeQTL/5_mixture_prep.sh")
+# Get a list of all files with the "-TReC.txt" extension
+file_list <- list.files(pattern = "-TReC.txt")
 
-bulk <- fread("total_counts.txt")
-# Tidy sample names
-colnames(bulk) <- str_extract(colnames(bulk), "\\d*(?=-)")
-# rename gene_id col
-name <- names(bulk[,1])
-bulk <- dplyr::rename(bulk, "ensembl_gene_id" = name)
+# Create an empty data table to store the combined data
+bulk <- data.table(ensembl_gene_id = character(0))
+
+# Loop through the files, read them, and combine them into data frame
+for (file in file_list) {
+  sample_id <- gsub("-TReC.txt", "", file)  # Extract sample_id from the file name
+  file_data <- fread(file, header = FALSE, sep = "\t", col.names = c("ensembl_gene_id", sample_id))
+  bulk <- merge(bulk, file_data, by = "ensembl_gene_id", all = TRUE)
+}
+
+# Replace missing values with zeros
+bulk[is.na(bulk)] <- 0
 
 # Tidy bulk data transcript_ids
 bulk$ensembl_gene_id <- str_remove_all(bulk$ensembl_gene_id, "\\.\\d")
@@ -62,7 +69,7 @@ filtered_genes <-
              by = c("ensembl_gene_id", "id"))
 
 
-write.csv(filtered_genes, file = "~/Documents/CSeQTL/data/ciber_ase/filtered_genes_test.csv")
+write.csv(filtered_genes, file = "~/Documents/CSeQTL/data/ciber_ase/filtered_genes_test_oct.csv")
 
 counts <- filtered_genes[, 2:(ncol(bulk))]
 
