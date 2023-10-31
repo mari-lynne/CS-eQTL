@@ -24,10 +24,10 @@ OUT_FILE=whi_lls
 echo "VCF-PLINK conversion - DONE!"
 
 # Convert final file back to BCF
-./plink2 --pfile ${OUT_FILE}--export vcf --out ${OUT_FILE}_QC
+./plink2 --pfile ${OUT_FILE} --export vcf --out ${OUT_FILE}_QC
 
 # Add index
-bcftools view ${OUT_FILE}_QC -Oz -o ${OUT_FILE}_QC.vcf.gz
+bcftools view ${OUT_FILE}_QC.vcf -Oz -o ${OUT_FILE}_QC.vcf.gz
 bcftools index ${OUT_FILE}_QC.vcf.gz
 
 echo "PLINK-VCF conversion - DONE!"
@@ -36,5 +36,5 @@ echo "PLINK-VCF conversion - DONE!"
 
 # TODO fix plot scripts
 
-mv *.log log/
+mv *.log log
 

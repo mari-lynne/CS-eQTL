@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=ASeq_Format
+#SBATCH --job-name=ASeq_Format2
 #SBATCH --nodes=1
-#SBATCH --mem-per-cpu=8G
+#SBATCH --mem-per-cpu=12
 #SBATCH --cpus-per-task=1
 #SBATCH --output=Rout/%j-%a.out  
 #SBATCH --error=Rerr/%j-%a.err 
 #SBATCH --mail-type=begin,end,fail
 #SBATCH --mail-user=mjohnso5@fredhutch.org
-#SBATCH --array=[1-1327%500]
+#SBATCH --array=[1-1327]
 
 # Aims:
 # Split reformated heterozygous bcf file into individual sample files
@@ -16,14 +16,15 @@
 
 # Info:
 # Run in parallel jobs using slurm and sample array for efficiency
-# Submit script as sbatch -J lls_sample_array_input.csv 3_aseq_format.sh
+# Submit script in scripts/split_scripts as sbatch 3_aseq_format.sh
+# Updates 10/10/23 rerun with unfiltered vcf file (reconcat)
 
 # 1) Variables and Directories ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ml BCFtools/1.14-GCC-11.2.0
 
 IN_DIR=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/LLS/Sept/LLS_Hap
-IN_FILE=whi_lls_concat.bcf.vcf.gz
+IN_FILE=whi_lls_reconcat.vcf.gz
 SAMPLE_ARRAY=lls_sample_array_input.csv
 
 OUT_DIR=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/LLS/Sept/LLS_Hap/aseq
@@ -42,7 +43,7 @@ SAMPLE_ASSIGN=$(awk -F"," -v N=$SLURM_ARRAY_TASK_ID '
 # Make assignments
 eval $SAMPLE_ASSIGN
 f=${topmed_nwdid}
-echo "Sample ID = $f"
+echo "Sample ID = ${f}"
 
 # 3) Make ASeq heterozygous SNP file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

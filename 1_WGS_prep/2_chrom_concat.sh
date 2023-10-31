@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --job-name=LLS_concat
 #SBATCH --mem-per-cpu=20G
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=12
 #SBATCH --output=Rout/%j-%a.out  
 #SBATCH --error=Rerr/%j-%a.err    
 #SBATCH --mail-type=begin,end,fail
@@ -20,11 +20,14 @@ IN_DIR=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/LLS/Se
 OUT_DIR=/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/LLS/Sept/LLS_Hap
 
 IN_FILE=freeze10b.whi_only_chr
-OUT_FILE=whi_lls_concat
+OUT_FILE=whi_lls_reconcat
+# reran 0ct 9th without GT filter
 
 # 2) Concatenate Chromsomes ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-bcftools concat ${IN_DIR}/${IN_FILE}{1..22}.bcf --naive --write-index -Oz -o ${OUT_DIR}/${OUT_FILE}.vcf.gz
-
+bcftools concat ${IN_DIR}/${IN_FILE}{1..22}.bcf -Oz -o ${OUT_DIR}/${OUT_FILE}.vcf.gz
 echo "Chr Concatenating - DONE!"
+
+bcftools index ${OUT_DIR}/${OUT_FILE}.vcf.gz
+echo "File indexing - DONE!"
 
