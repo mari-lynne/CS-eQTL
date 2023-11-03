@@ -23,7 +23,7 @@ ml fhR
 
 IN_DIR="/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/LLS/Sept/LLS_Hap"
 REF_DIR="/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/ref_data"
-OUT_DIR="/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/genotype/LLS/Sept/gene_data/chr${SLURM_ARRAY_TASK_ID}"
+OUT_DIR="${IN_DIR}/gene_data/chr${SLURM_ARRAY_TASK_ID}"
 
 IN_FILE="whi_lls_QC.vcf.gz"
 COORD_FILE="${REF_DIR}/autosome_eqtl_${SLURM_ARRAY_TASK_ID}.txt"
