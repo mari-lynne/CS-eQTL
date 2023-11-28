@@ -93,63 +93,65 @@ bulk_tpm <- bulk_tpm[, c(ncol(bulk_tpm), 1:(ncol(bulk_tpm)-1))] # reorder column
 write.table(sig_tpm, file = sig_fn, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
 write.table(bulk_tpm, file = mix_fn, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
 
-# 3 Run cibersort --------------------------------------------------------------
-source("5_cibersort_source.R") # Obtained from CIBERSORT website
+# 3 Run/Load cibersort ---------------------------------------------------------
+source(file.path(in_dir, "cibersort_source.R")) # Obtained from CIBERSORT website
 
 # Output 
-results <- CIBERSORT(sig_matrix = sig_fn, mixture_file = mix_fn, filename = "DECON",
+results <- CIBERSORT(sig_matrix = sig_fn, mixture_file = mix_fn, filename = "DECON_QC",
                      perm = 0, QN = FALSE, absolute = FALSE, abs_method = 'sig.score')
 
-# filename = "DECON"
-results = as.data.frame(results)
-# Extract proportion of transcripts per cell type per sample
-pp_bar_ciber <- results[1:22] # 22 immune subsets
+results <- as.data.frame(results)
+cat("Cibersort imputation - DONE!")
 
+# Or upload from local docker folder
+results <- fread(file = paste0(work_dir, "/docker/output/CIBERSORTx_Adjusted.txt"))
+
+# Extract proportion of transcripts per cell type per sample
+ciber_fractions <- as.data.table(results[, 2:23]) # 22 immune subsets
+row.names(ciber_fractions) <- results$Mixture
+
+# Update cell sizes ------------------------------------------------------------
 # Cell size table (estimated in EPIC paper) 
 # TODO update with our own FSC/SSC data
-T_cells <- colnames(pp_bar_ciber)[str_starts(colnames(pp_bar_ciber), "T")==TRUE]
-B_cells <- colnames(pp_bar_ciber)[str_starts(colnames(pp_bar_ciber), "B|Plasma")==TRUE]
-NK <- colnames(pp_bar_ciber)[str_starts(colnames(pp_bar_ciber), "NK")==TRUE]
-mono <- colnames(pp_bar_ciber)[str_starts(colnames(pp_bar_ciber), "Mono|Macro|Den|Mast")==TRUE]
-neut <- colnames(pp_bar_ciber)[str_starts(colnames(pp_bar_ciber), "Neut|Eo")==TRUE]
+T_cells <- colnames(ciber_fractions)[str_starts(colnames(ciber_fractions), "T")==TRUE]
+B_cells <- colnames(ciber_fractions)[str_starts(colnames(ciber_fractions), "B|Plasma")==TRUE]
+NK <- colnames(ciber_fractions)[str_starts(colnames(ciber_fractions), "NK")==TRUE]
+mono <- colnames(ciber_fractions)[str_starts(colnames(ciber_fractions), "Mono|Macro|Den|Mast")==TRUE]
+neut <- colnames(ciber_fractions)[str_starts(colnames(ciber_fractions), "Neut|Eo")==TRUE]
 
-sizes <- c(rep(0.4, length(B_cells)),
-               rep(0.4, length(T_cells)),
+cell_sizes <- c(rep(0.4, length(T_cells)),
+               rep(0.4, length(B_cells)),
                rep(0.42, length(NK)),
                rep(1.4, length(mono)),
                rep(0.15, length(neut)))
 
-pp_bar_ciber <- rbind(pp_bar_ciber, sizes)
-
-# Adjust expression for cell size S
-pp_hat_ciber <- t(apply(pp_bar_ciber, 1, function(xx) {
-  yy <- xx / sizes
-  yy / sum(yy)
+# Calculate proportion of cell types per sample
+pp_hat_ciber = t(apply(ciber_fractions,1,function(xx){
+  yy = xx / cell_sizes; yy / sum(yy)
 }))
 
-pp_hat_ciber <- pp_hat_ciber[-nrow(pp_hat_ciber),]
-
-write.csv(pp_hat_ciber, file = "~/Documents/CSeQTL/data/ciber_ase/pp_hat_ciber_test.csv")
 
 ## Combine cell types -----------------------------------------------------------
 
 # Create a new matrix with combined values and columns
-combined_matrix <- matrix(0, nrow = nrow(pp_hat_ciber), ncol = 5)  # Adjust the number of columns as needed
-colnames(combined_matrix) <- c("T_cells", "B_cells", "NK", "mono", "neut")
-row.names(combined_matrix) <- row.names(pp_hat_ciber)
+cell_combo <- matrix(0, nrow = nrow(pp_hat_ciber), ncol = 5)  # Adjust the number of columns as needed
+colnames(cell_combo) <- c("T_cells", "B_cells", "NK", "Mono", "Neut")
+row.names(cell_combo) <- row.names(ciber_fractions)
 
-combined_matrix[, "T_cells"] <- rowSums(pp_hat_ciber[, T_cells])
-combined_matrix[, "B_cells"] <- rowSums(pp_hat_ciber[, B_cells])
-combined_matrix[, "NK"] <- rowSums(pp_hat_ciber[, NK])
-combined_matrix[, "mono"] <- rowSums(pp_hat_ciber[, mono])
-combined_matrix[, "neut"] <- rowSums(pp_hat_ciber[, neut])
+input <- pp_hat_ciber # pp_hat_ciber
 
-write.csv(combined_matrix, file = "~/Documents/CSeQTL/data/ciber_ase/pp_hat_ciber_test.csv")
+cell_combo[, "T_cells"] <- rowSums(input[, T_cells])
+cell_combo[, "B_cells"] <- rowSums(input[, B_cells])
+cell_combo[, "NK"] <- rowSums(input[, NK])
+cell_combo[, "Mono"] <- rowSums(input[, mono])
+cell_combo[, "Neut"] <- rowSums(input[, neut])
+
+# write.csv(cell_combo, file = "~/Documents/CSeQTL/data/ciber_ase/pp_hat_ciber_test.csv")
 
 ## Plotting ------------------------------------------------------------------
 
 ciber <- as.data.frame(pp_hat_ciber)
-# ciber <- as.data.frame(combined_matrix)
+ciber <- as.data.frame(cell_combo)
 ciber$sample_id <- row.names(ciber)
 
 ciber <- ciber %>% group_by(sample_id)
@@ -172,5 +174,12 @@ ciber %>% ggplot(aes(x=sample_id, y=fraction, fill=cell_type)) +
   labs(y = "Fraction \n", x= "Sample ID", title = "Cibersort Output")
 
 dev.off()
+
+
+# Compare overlapping samples --------------------------------------------------
+
+# 20 samples overlap between sct and lls cohort
+# get meta files for each, use intersect topmed_nwdid, then get the rnaseq ids from sct, use that to subset first data set and plot histos
+
 
 
