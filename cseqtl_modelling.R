@@ -1,3 +1,9 @@
+#!/bin/env/Rscript
+
+# Aims:
+
+# Model CSeQTL, allele-specific, cell-type specific eQTLs per gene
+
 library("smarter")
 library("CSeQTL")
 library("stringr")
@@ -26,12 +32,14 @@ library("caret")
 # XX_trecPC 	# residual TReC PCs, centered
 # XX = cbind(Int = 1,XX_base,XX_genoPC,XX_trecPC)
 
-
 # Data Directories: ------------------------------------------------------------
-script_dir <- "/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/scripts/split_scripts"
-chrom <- "7" # S{SLURM_TASK_ARRAY}
-base_dir <- "/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results"
 
+# Submit in SLURM, import args
+args <- commandArgs(trailingOnly = TRUE)
+chr <- args[1]
+chrom <- chr
+
+base_dir <- "/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results"
 snp_dir <- paste0(base_dir, "/genotype/LLS/Sept/LLS_Hap/gene_data/chr", chrom)
 aseq_dir <- file.path(base_dir, "ASE/per_gene")
 ciber_dir <- file.path(base_dir, "rnaseq/ciber/lls") # pp_ciber_combo.csv
@@ -89,14 +97,28 @@ RHO <- column_to_rownames(RHO, var = "X")
 
 # Load ASeq and SNP data -------------------------------------------------------
 
-# Aseq data made in Aseq format > run_aggregate.sh
 # Genotype data made in aggregate, gathers SNPs per gene
+# Aseq data made in Aseq format > run_aggregate.sh
+
+# Get list of files in snp_dir
+genes <- list.files(snp_dir)
+
+for (i in genes) {
+  # set up data, where test_gene = i, and run through
+}
+
+# Load genotype data
+SNP <- fread(paste0(snp_dir,"/", test_gene, ".txt"))
+SNP <- column_to_rownames(SNP, var = "SNP_ID")
 
 # ASEQ data
+# run as loop through all the files in 
 test_gene <- "ENSG00000002933"
-aseq_dir <- "/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/ASE/per_gene/test"
+aseq_dir <- "/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/results/ASE/per_gene"
 ase_file <- list.files(aseq_dir, pattern = test_gene)
 aseq_dat <- fread(file.path(aseq_dir, ase_file))
+# TODO add header line :)
+
 # ORDER by covar matrix
 index <- match(row.names(XX), aseq_dat$sample_id)
 # Reorder gene_dat based on the indices
@@ -119,10 +141,6 @@ names(PHASE) <- aseq_dat$sample_id
 
 hap2 <- aseq_dat$hap2
 names(hap2) <- aseq_dat$sample_id
-
-# Load genotype data
-SNP <- fread(paste0(snp_dir,"/", test_gene, ".txt"))
-SNP <- column_to_rownames(SNP, var = "SNP_ID")
 
 ## Check orders -----------------------------------------------------------------
 # Filter for matching samples and order

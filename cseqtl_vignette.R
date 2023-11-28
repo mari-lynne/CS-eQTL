@@ -1,3 +1,4 @@
+# Set up -----------------------------------------------------------------------
 library(CSeQTL)
 library(data.table)
 library(dplyr)
@@ -6,87 +7,6 @@ library(ggplot2)
 
 # An Introduction
 vignette(topic = "intro",package = "CSeQTL")
-
-# Directories and input
-
-gen_dir <- c("/fh/scratch/delete90/kooperberg_c/mjohnson/cseqtl/test_aug/ASE/genes")
-test_gene <- c("ENSG00000000457.14_counts.txt")
-
-# Per gene, and per SNP all samples data: --------------------------------------
-TREC 	# TReC vector (Per gene!)
-SNP	# phased genotype vector
-hap2	# 2nd haplotype counts
-ASREC 	# total haplotype counts = hap1 + hap2
-PHASE 	# Indicator vector of whether or not to use haplotype counts
-
-# make in aggregate_genes.sh
-gene_dat <- fread(file.path(gen_dir, test_gene))
-TREC <- gene_dat$total
-SNP <- rep(1, nrow(gene_dat)) # Replace with SNP of interest phase info
-ASREC <- gene_dat$ASREC
-PHASE <- rep(1, nrow(gene_dat))
-
-# Get haplotype info for 
-# Simulate a data object for a gene and SNP
-SNP <- sim$true_SNP
-
-# Sample-specific variables -------------------------------------------------
-# See 6_covar_pca.R
-
-RHO 			# cell type proportions matrix
-XX_base 	# baseline covariates, continuous variables centered
-XX_genoPC 	# genotype PCs, centered
-XX_trecPC 	# residual TReC PCs, centered
-
-covar <- read.csv(file = "~/Documents/whi_sca/rna/meta/sct_cseqtl_test_covars.csv")
-row.names(covar) <- covar$nwgc_sample_id
-covar <- covar[1:20, ]
-# Sample covars
-XX_base <- covar %>% select(age, bmi_t0)
-XX_base <- scale(XX_base)
-XX_base <- cbind(covar$group, XX_base) # group col acting as y intercept
-
-# RNAseq covars
-XX_trecPC <- covar %>% select(starts_with("PC"))
-
-# Geno covars
-geno_pc <- fread(file = "~/Documents/CSeQTL/data/ciber_ase/ase/whi_sub_concat.LD.eigenvec")
-XX_genoPC <- geno_pc[1:20, 3:10] # use first 7 for now, prob with 20 samples will reduce rnaseq covars too
-XX_genoPC <- scale(XX_genoPC)
-
-# RHO cell type proportions matrix
-RHO <- read.csv(file = "~/Documents/whi_sca/rna/results/ciber/R/pp_hat_ciber_merged.csv")
-RHO <- RHO[RHO$X %in% covar$X, ]
-RHO <- RHO[match(covar$X, RHO$X),] # Match up row orders
-row.names(RHO) <- covar$nwgc_sample_id
-RHO <- RHO[, -1] # remove ID col
-XX = cbind(XX_base,XX_genoPC,XX_trecPC)
-
-# 3) Tuning arguments ----------------------------------------------------------
-trim 		# TRUE for trimmed analysis, FALSE for untrimmed
-thres_TRIM 	# if trim = TRUE, the Cooks' distance cutoff to trim sample TReCs
-ncores 	# number of threads/cores to parallelize the loop, improve runtime
-
-# 4) ASREC-related cutoffs to satisfy to use allele-specific read counts -------
-numAS 		# cutoff to determine if a sample has sufficient read counts
-numASn 	# cutoff of samples having ASREC >= numAS
-numAS_het 	# minimum number for sum(ASREC >= numAS & SNP %in% c(1,2))
-cistrans 	# p-value cutoff on cis/trans testing to determine which p-value 
-# (TReC-only or TReC+ASReC) to report
-
-
-# Run eQTL mapping -------------------------------------------------------------
-gs_out = CSeQTL_GS(XX = XX,TREC = TREC, SNP = SNP, hap2 = hap2,
-                   ASREC = ASREC, PHASE = PHASE, RHO = RHO, trim = trim,
-                   thres_TRIM = 20, numAS = 5, numASn = 5, numAS_het = 5,
-                   cistrans = 0.01, ncores = ncores, show = TRUE)
-
-?CSeQTL_GS
-?CSeQTL_smart
-?CSeQTL_full_analysis
-?CSeQTL_linearTest # no matrix of SNPs, one SNP one gene
-
-
 
 # Vignette ---------------------------------------------------------------------
 vignette(topic = "intro",package = "CSeQTL")
@@ -101,35 +21,27 @@ ls("package:CSeQTL")
 # Fix seed
 set.seed(2)
 
-# Simulate cell type expression/count data -------------------------------------
+### Simulate cell type expression/count data -----------------------------------
 # sample size
 NN = 300
-
 # fold-change between q-th and 1st cell type
 true_KAPPA  = c(1,3,1)
-
 # eQTL effect size per cell type, 
 #   fold change between B and A allele
 true_ETA    = c(1,1,1)
-
 # cis/trans effect size
 true_ALPHA  = c(1,1,1)
-
 # count number of cell types
 QQ = length(true_KAPPA)
-
 # TReC model overdispersion
 true_PHI = 0.1
-
 # ASReC model overdispersion
 true_PSI = 0.05
-
 # Simulate cell type proportions
 tRHO = gen_true_RHO(wRHO = 1,NN = NN,QQ = QQ)
 plot_RHO(RHO = tRHO)
 
-
-# Simulate a data object for a gene and SNP ------------------------------------
+### Simulate a data object for a gene and SNP ----------------------------------
 sim = CSeQTL_dataGen(NN = NN,MAF = 0.3,true_BETA0 = log(1000),
                      true_KAPPA = true_KAPPA,true_ETA = true_ETA,true_PHI = true_PHI,
                      true_PSI = true_PSI,prob_phased = 0.05,true_ALPHA = true_ALPHA,
@@ -179,7 +91,7 @@ ggplot(data = sim$dat,
         axis.title = element_text(size = 15),
         axis.text = element_text(size = 12))
 
-# Cell specific testing --------------------------------------------------------
+## Cell specific testing -------------------------------------------------------
 
 cistrans_thres = 0.01
 res = c()
@@ -215,7 +127,6 @@ for(trec_only in c(TRUE,FALSE)){
     }}}
 
 # Check
-
 sout = CSeQTL_smart(TREC = sim$dat$total,hap2 = sim$dat$hap2,
                     ASREC = sim$dat$total_phased,PHASE = PHASE,
                     SNP = sim$true_SNP,RHO = sim$true_RHO,XX = sim$XX,upPHI = upPHI,
@@ -232,3 +143,24 @@ sim$true_SNP
 
 ols_out = CSeQTL_linearTest(input = sim$dat,XX = sim$XX,
                             RHO = sim$true_RHO,SNP = sim$true_SNP,MARG = TRUE)
+
+str(sim$dat)
+# 'data.frame':	300 obs. of  13 variables:
+$ total       : num  456 1080 702 797 434 ...
+$ LGX1        : num  2340 6468 3903 4532 2206 ...
+$ total_phased: int  27 47 30 38 26 51 75 210 33 89 ...
+$ hap2        : num  13 17 10 25 16 20 39 113 14 44 ...
+$ LBC         : num  16.8 28.6 17.2 22.4 15.5 ...
+$ phased      : num  1 1 1 1 1 1 1 1 1 1 ...
+$ log_mu      : num  6.21 6.97 6.57 7.34 6.46 ...
+$ mu          : num  498 1068 711 1543 637 ...
+$ pp          : num  0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 0.5 ...
+$ phase0      : num  0 0 0 0 0 0 0 0 0 0 ...
+$ log_lib_size: num  5.54 5.85 5.75 5.92 5.97 ...
+$ geno_col    : chr  "#FF0000BF" "#0000FFBF" "#00FF00BF" "#FF0000BF" ...
+$ SNP         : Factor w/ 4 levels "AA","AB","BA",..: 1 4 2 1 4 4 3 3 2 4 ...
+
+
+
+
+

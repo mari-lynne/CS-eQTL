@@ -6,6 +6,7 @@ library("CSeQTL")
 wd <- "/home/mari/Documents/CSeQTL/data/ciber_ase"
 
 # Input ------------------------------------------------------------------------
+
 # TReC data
 # ASReC data (haplotype 1 and 2 read counts)
 # Phased genotypes
